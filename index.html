@@ -161,21 +161,21 @@
               </div>
               <div class="modal-body">
                 <p>
-                  Assign a network interface for registration on any node with multiple network interfaces detected. Unselected nodes will not be registered.
+                  Assign a network interface for registration on any node with multiple network interfaces detected. Unselected nodes will not be deployed.
                 </p>
                 <div class="info-header">
                   <ul>
                     <li>
-                      <strong>0</strong> unassigned interface
+                      <strong id="selected-node-count">0</strong> selected nodes
                     </li>
                     <li>
-                      <strong>0</strong> unassigned interface
+                      <strong id="unassigned-node-count">0</strong> unassigned interface
                     </li>
                   </ul>
                   <h1>Node Status</h1>
                 </div>
 
-                        <form class="form-horizontal">
+                        <form class="form-horizontal" id="node-status-form">
 
                           <div class="form-group">
                             <div class="col-sm-6">
@@ -195,7 +195,7 @@
                             </div>
                           </div><!-- form-group -->
 
-                          <div class="form-group has-error">
+                          <div class="form-group">
                             <div class="col-sm-6">
                               <span class="checkbox-container">
                                 <input type="checkbox">
@@ -209,10 +209,7 @@
                               </select>
                             </div>
                             <div class="col-sm-6">
-                              <span class="form-static-text"><span class="pficon pficon-error-circle-o"></span> osp_devel_env_default</span>
-                            </div>
-                            <div class="col-sm-12">
-                              <span class="help-block">A node cannot be selected until an interface has been assigned.</span>
+                              <span class="form-static-text"> osp_devel_env_default</span>
                             </div>
                           </div><!-- form-group -->
 
@@ -224,7 +221,7 @@
                               <span class="form-static-text">52:54:00:e0:6e:9b</span>
                             </div>
                             <div class="col-sm-6">
-                              <span class="form-static-text">rhev_engine_for_dev145755</span>
+                              <span class="form-static-text"> rhev_engine_for_dev145755</span>
                             </div>
                           </div><!-- form-group -->
 
@@ -236,7 +233,7 @@
                               <span class="form-static-text">05:AC:78:5A:92:C3</span>
                             </div>
                             <div class="col-sm-6">
-                              <span class="form-static-text">fedora-unpatched</span>
+                              <span class="form-static-text"> fedora-unpatched</span>
                             </div>
                           </div><!-- form-group -->
 
@@ -255,7 +252,7 @@
                               </select>
                             </div>
                             <div class="col-sm-6">
-                              <span class="form-static-text">git_devel_env_ops_default</span>
+                              <span class="form-static-text"> git_devel_env_ops_default</span>
                             </div>
                           </div><!-- form-group -->
 
@@ -274,7 +271,7 @@
                               </select>
                             </div>
                             <div class="col-sm-6">
-                              <span class="form-static-text">osp_node_vm_for_DEV</span>
+                              <span class="form-static-text"> osp_node_vm_for_DEV</span>
                             </div>
                           </div><!-- form-group -->
 
@@ -292,7 +289,7 @@
                               </select>
                             </div>
                             <div class="col-sm-6">
-                              <span class="form-static-text">fedora22_patched</span>
+                              <span class="form-static-text"> fedora22_patched</span>
                             </div>
                           </div><!-- form-group -->
 
@@ -362,7 +359,7 @@
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary">Deploy</button>
+                <button id="deploy-button" type="button" class="btn btn-primary">Deploy</button>
               </div>
             </div>
           </div>
@@ -372,6 +369,80 @@
   </div><!-- row -->
 </div><!-- container -->
 
+<script>
+  var updateNodeStatus = function() {
+    var checked = false;
+    $('#node-status-form').find(':checkbox').each(function(index, checkbox) {
+      checked = checked || $(checkbox).is(':checked');
+    });
+    var formError = $('#node-status-form>.form-group.has-error').length > 0;
+    if (checked && !formError) {
+      $('#deploy-button').removeClass('disabled');
+    } else {
+      $('#deploy-button').addClass('disabled');
+    }
+
+    var selectedCount = 0;
+    var unassignedCount = 0;
+    $('#node-status-form>.form-group').each(function(index, group) {
+      if ($(group).find(':checkbox').is(':checked')) {
+        selectedCount++;
+      } else {
+        unassignedCount++;
+      }
+    });
+    $('#selected-node-count').text(selectedCount);
+    $('#unassigned-node-count').text(unassignedCount);
+  };
+
+  var addFormError = function($group) {
+    $group.addClass('has-error');
+    $group.find('.form-static-text').prepend('<span class="pficon pficon-error-circle-o">');
+    $group.append('<div class="col-sm-12" data-error="error-text">' +
+            '<span class="help-block">A node cannot be selected until an interface has been assigned.</span>' +
+            '</div>');
+  };
+
+  var removeFormError = function($group) {
+    $group.removeClass('has-error');
+    $group.find('.form-static-text > .pficon.pficon-error-circle-o').remove();
+    $group.find('[data-error="error-text"]').remove();
+  };
+
+  var updateFormError = function($group) {
+    var select = $group.find('select');
+    if ($group.find(':checkbox').is(':checked')) {
+      if ($(select).find('option:selected').text() == 'Assign interface') {
+        addFormError($group);
+      } else {
+        removeFormError($group);
+      }
+    } else {
+      removeFormError($group);
+    }
+  };
+
+  var onAssignChange = function($group) {
+    updateFormError($group);
+    updateNodeStatus();
+  };
+
+  $('#node-status-form>.form-group').each(function(index, group) {
+    var $group = $(group);
+    $group.find('select').on('change', function(e) {
+      onAssignChange($group);
+    });
+    $group.find(':checkbox').on('change', function(e) {
+      onAssignChange($group);
+    });
+
+    // Initialize any errors
+    updateFormError($group);
+  });
+
+  // Initialize status and deploy button state
+  updateNodeStatus();
+</script>
 
   </body>
 </html>
