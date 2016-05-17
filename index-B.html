@@ -380,10 +380,13 @@
       var checked = false;
 
       $('#node-status-form>.form-group').each(function(index, group) {
+        var select = $(group).find('select');
         if ($(group).find(':checkbox').is(':checked')) {
           selectedCount++;
+          select.removeAttr('disabled');
         } else {
           unassignedCount++;
+          select.attr('disabled', 'disabled');
         }
       });
 

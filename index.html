@@ -191,7 +191,7 @@
                               </select>
                             </div>
                             <div class="col-sm-6">
-                              <span class="form-static-text">osp_devel_env_default</span>
+                              <span class="form-static-text"> osp_devel_env_default</span>
                             </div>
                           </div><!-- form-group -->
 
@@ -377,10 +377,13 @@
     var checked = false;
 
     $('#node-status-form>.form-group').each(function(index, group) {
+      var select = $(group).find('select');
       if ($(group).find(':checkbox').is(':checked')) {
         selectedCount++;
+        select.removeAttr('disabled');
       } else {
         unassignedCount++;
+        select.attr('disabled', 'disabled');
       }
     });
 
