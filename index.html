@@ -371,19 +371,11 @@
 
 <script>
   var updateNodeStatus = function() {
-    var checked = false;
-    $('#node-status-form').find(':checkbox').each(function(index, checkbox) {
-      checked = checked || $(checkbox).is(':checked');
-    });
-    var formError = $('#node-status-form>.form-group.has-error').length > 0;
-    if (checked && !formError) {
-      $('#deploy-button').removeClass('disabled');
-    } else {
-      $('#deploy-button').addClass('disabled');
-    }
 
     var selectedCount = 0;
     var unassignedCount = 0;
+    var checked = false;
+
     $('#node-status-form>.form-group').each(function(index, group) {
       if ($(group).find(':checkbox').is(':checked')) {
         selectedCount++;
@@ -391,6 +383,17 @@
         unassignedCount++;
       }
     });
+
+    $('#node-status-form').find(':checkbox').each(function(index, checkbox) {
+      checked = checked || $(checkbox).is(':checked');
+    });
+    var formError = $('#node-status-form>.form-group.has-error').length > 0;
+    if (checked && !formError && selectedCount >= 7) {
+      $('#deploy-button').removeClass('disabled');
+    } else {
+      $('#deploy-button').addClass('disabled');
+    }
+
     $('#selected-node-count').text(selectedCount);
     $('#unassigned-node-count').text(unassignedCount);
   };
